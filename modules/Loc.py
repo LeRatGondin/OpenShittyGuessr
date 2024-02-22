@@ -7,6 +7,7 @@ class RandLoc:
     def __init__(self):
         self.lat = 0
         self.lon = 0
+        self.access_token = None
         while self.lat == 0 and self.lon == 0:
             world = gpd.read_file('modules/world.shp')
             areas = world.area
@@ -38,16 +39,23 @@ class RandLoc:
                 continue
             road = random.choice(data['elements'])
             self.lon, self.lat = road['center']['lon'], road['center']['lat']
+            print(f'{self.lat-0.1},{self.lon-0.1},{self.lat+0.1},{self.lon+0.1}')
 
     def generate_nearest_streetview_iframe(self):
-        baseurl = "https://www.google.com/maps/embed/v1/streetview"
-        params = {
-            "location": f"{self.lat},{self.lon}",
-            "heading": "151.78",
-            "pitch": "-0.76",
-            "key": "AIzaSyAY9lzcIlf6rTjb9fPgoEbLgN82hYQTDxk"
+        url = f"https://graph.mapillary.com/images?fields=id&bbox=12.9045108,-61.321936900000004,13.1045108,-61.1219369"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'OAuth MLYARAKMLP2RF9wPB3kw1iCe7aPm39nVp39ZCFopsnFoqcEyJZCvHSvYvVprvCG9TFwhUGP2nFJhVkc4xWRV97YFcZBWmeGmqT7I0R4t4zrk3cG26zWF1thaAOpLBh0gZDZD'
         }
-        iframe = f'<iframe width="600" height="450" frameborder="0" style="border:0" src="{baseurl}?key={params["key"]}&location={params["location"]}&heading={params["heading"]}&pitch={params["pitch"]}" allowfullscreen></iframe>'
+        response = requests.get(headers=headers, url=url)
+        print(response.json())
+        iframe = """
+        <iframe 
+        src="https://www.mapillary.com/embed?image_key=550092599700936&style=photo" 
+        height="480" 
+        width="640"  
+        frameborder="0">
+        </iframe>"""
         return iframe
 
 

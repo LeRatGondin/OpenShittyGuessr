@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import folium
 from modules import Loc
-
+import time
 app = Flask(__name__, static_folder='static')
 
 loc = Loc.RandLoc()
@@ -16,6 +16,9 @@ def root():
             'popup': 'This is the middle of the map.'
         }
     ]
+    m.get_root().html.add_child(folium.Element(
+        loc.generate_nearest_streetview_iframe()))
+    m.save("templates/index.html")
     return render_template('index.html', markers=markers)
 
 
@@ -38,6 +41,15 @@ def process():
     return "ok"
 
 
+@app.route('/connect', methods=['GET'])
+def connect():
+    # Accessing the parameters from the request
+    data = request.args
+    loc.access_token = data['code']
+
+    return "ok"
+
+
 m = folium.Map()
 m.get_root().html.add_child(folium.Element("""
 <div class="header">
@@ -48,8 +60,9 @@ m._name = "map"
 m._id = "1"
 m.get_root().html.add_child(folium.JavascriptLink('static/js/universal.js'))
 
-m.get_root().html.add_child(folium.Element(
-    loc.generate_nearest_streetview_iframe()))
+
+# Generate a iframe in the form of a string "<iframe width="640" height="480" src="https://www.mapillary.com/embed?map_style=Mapillary%20streets&amp;image_key=5377780175626061&amp;x=0.508403494278837&amp;y=0.5097834191221994&amp;style=image" frameborder="0"></iframe>" using the mapillary api and add it to the map
+
 m.get_root().html.add_child(folium.CssLink('static/css/universal.css'))
 
 m.save("templates/index.html")
