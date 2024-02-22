@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request
 import folium
-
+from modules import Loc
 
 app = Flask(__name__, static_folder='static')
+
+loc = Loc.RandLoc()
 
 
 @app.route('/')
@@ -20,7 +22,19 @@ def root():
 @app.route('/process', methods=['POST'])
 def process():
     data = request.json
-    print(data)
+    lat = data['lat']
+    lng = data['lng']
+    real_lat = loc.lat
+    real_lng = loc.lon
+    # Calculate the score based on the distance between the two points
+    # and the user's guess
+    distance = ((lat - real_lat)**2 + (lng - real_lng)**2)**0.5
+    score = 1 - distance / 180
+    print(score)
+    print(f"Real: {real_lat}, {real_lng}" +
+          f"Guess: {lat}, {lng}" + f"Distance: {distance}")
+    # Print the score to the console
+
     return "ok"
 
 
@@ -33,7 +47,9 @@ m.get_root().html.add_child(folium.Element("""
 m._name = "map"
 m._id = "1"
 m.get_root().html.add_child(folium.JavascriptLink('static/js/universal.js'))
-m.get_root().html.add_child(folium.Element("""<iframe id="iframe" src="https://www.google.com/maps/embed?pb=!4v1707984391055!6m8!1m7!1szLTYPGvYKMsvfFDDPZz4Dw!2m2!1d48.8296814503996!2d2.261544657986094!3f236.3444103256701!4f1.9340393629049117!5f0.7820865974627469" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>"""))
+
+m.get_root().html.add_child(folium.Element(
+    loc.generate_nearest_streetview_iframe()))
 m.get_root().html.add_child(folium.CssLink('static/css/universal.css'))
 
 m.save("templates/index.html")
