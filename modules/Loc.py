@@ -54,7 +54,6 @@ class RandLoc:
         }
         response = requests.get(headers=headers, url=url)
         data = response.json()
-        print(data)
         if data == {"data": []}:
             return None
         photo_id = data['data'][0]['id']

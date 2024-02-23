@@ -19,10 +19,10 @@ if config['access_token'] == "":
 
 def add_location():
     while True:
-        print("Thread" + str(len(locations)) + "locations.")
+        print(f"Thread {str(len(locations))} locations.")
         print("Generating new location...")
         while len(locations) >= 2:
-            time.sleep(5)
+            time.sleep(10)
             print("Waiting for locations to be used...")
         loc = Loc.RandLoc()
         photo_id = loc.generate_nearest_streetview_iframe()
@@ -39,7 +39,8 @@ thread.start()
 
 @app.route('/')
 def root():
-    print("Root" + str(len(locations)))
+    if len(locations) == 0:
+        return "Loading locations..., please wait."
     markers = [
         {
             'lat': 0,
@@ -90,7 +91,7 @@ def result():
         Loc.decimal_to_dms(found_lng, "lon")
     formated_real = Loc.decimal_to_dms(real_lat, "lat") + ", " +\
         Loc.decimal_to_dms(real_lng, "lon")
-    return render_template('result.html', formated_guess=formated_guess, formated_real=formated_real, real_location=real_location, guess_location=guess_location, distance=distance_str, score=score)
+    return render_template('result.html', formated_guess=formated_guess, formated_real=formated_real, real_location=real_location, guess_location=guess_location, distance=distance_str, score=score, bar=round(score / 50, 2))
 
 
 app.run(host="localhost", port=8080, debug=True)

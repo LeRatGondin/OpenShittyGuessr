@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Résultats</title>
     <link rel="stylesheet" href="static/css/universal.css" />
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"
@@ -13,7 +12,6 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"
     />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
   </head>
   <body>
     <div class="container result-container">
@@ -21,34 +19,47 @@
         <div id="result-map"></div>
         <div class="result-box">
           <h2>Vos résultats :</h2>
-          <p>Localisation réele : <br />{{ formated_real }}</p>
+          <p>Localisation réelle : <br />{{ formated_real }}</p>
           <p>Localisation trouvée : <br />{{ formated_guess }}</p>
           <p>Distance : {{ distance }}</p>
           <p>Score : {{ score }} / 5000</p>
+          <div class="progressbar-wrapper">
+            <div title="Score" id="score" class="progressbar score">
+              {{bar}}%
+            </div>
+          </div>
         </div>
       </div>
       <button class="result-button" onclick="window.location.href='/'">
         Retourner au jeu
       </button>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
     <script>
-      var result_map = L.map('result-map').setView([0,0], 1);
+      var result_map = L.map('result-map').setView([0, 0], 1);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution:
-            '\u0026copy; \u003ca href="https://www.openstreetmap.org/copyright"\u003eOpenStreetMap\u003c/a\u003e contributors',
-          detectRetina: false,
-          maxNativeZoom: 19,
-          minZoom: 0,
-          noWrap: false,
-          opacity: 1,
-          subdomains: "abc",
-          tms: false,
+        maxZoom: 19,
+        attribution:
+          '\u0026copy; \u003ca href="https://www.openstreetmap.org/copyright"\u003eOpenStreetMap\u003c/a\u003e contributors',
+        detectRetina: false,
+        maxNativeZoom: 19,
+        minZoom: 0,
+        noWrap: false,
+        opacity: 1,
+        subdomains: 'abc',
+        tms: false,
       }).addTo(result_map);
 
-      L.marker([{{ real_location.lat }}, {{ real_location.lng }}], {icon: L.AwesomeMarkers.icon({icon: 'star', markerColor: 'green'})}).addTo(result_map);
-      L.marker([{{ guess_location.lat }}, {{ guess_location.lng }}], {icon: L.AwesomeMarkers.icon({icon: 'star', markerColor: 'red'})}).addTo(result_map);
+      L.marker([{{ real_location.lat }}, {{ real_location.lng }}], {
+        icon: L.AwesomeMarkers.icon({ icon: 'star', markerColor: 'green' }),
+      }).addTo(result_map);
+      L.marker([{{ guess_location.lat }}, {{ guess_location.lng }}], {
+        icon: L.AwesomeMarkers.icon({ icon: 'star', markerColor: 'red' }),
+      }).addTo(result_map);
+      var score = document.getElementById("score").innerHTML;
+      document.getElementById("score").style.width = score;
     </script>
   </body>
 </html>
