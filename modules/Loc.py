@@ -1,6 +1,10 @@
 import requests
 import random
 import geopandas as gpd
+import json
+
+
+access_token = json.load(open('config.json'))['access_token']
 
 
 class RandLoc:
@@ -12,7 +16,7 @@ class RandLoc:
             world = gpd.read_file('modules/world.shp')
             areas = world.area
             valid_shapes = [shape for shape, area in zip(
-                world.geometry, areas) if area > 0]
+                world.geometry, areas) if area > 2]
             if valid_shapes:
                 shape = random.choice(valid_shapes)
             else:
@@ -38,25 +42,24 @@ class RandLoc:
             if not data['elements']:
                 continue
             road = random.choice(data['elements'])
-            self.lon, self.lat = road['center']['lon'], road['center']['lat']
-            print(f'{self.lat-0.1},{self.lon-0.1},{self.lat+0.1},{self.lon+0.1}')
+            self.lon, self.lat = round(road['center']['lon'], 5), round(
+                road['center']['lat'], 5)
 
     def generate_nearest_streetview_iframe(self):
-        url = f"https://graph.mapillary.com/images?fields=id&bbox=12.9045108,-61.321936900000004,13.1045108,-61.1219369"
+
+        url = f"https://graph.mapillary.com/images?fields=id&bbox={self.lon-0.001},{self.lat-0.001},{self.lon+0.001},{self.lat+0.001}"
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'OAuth MLYARAKMLP2RF9wPB3kw1iCe7aPm39nVp39ZCFopsnFoqcEyJZCvHSvYvVprvCG9TFwhUGP2nFJhVkc4xWRV97YFcZBWmeGmqT7I0R4t4zrk3cG26zWF1thaAOpLBh0gZDZD'
+            'Authorization': f'OAuth {access_token}'
         }
         response = requests.get(headers=headers, url=url)
-        print(response.json())
-        iframe = """
-        <iframe 
-        src="https://www.mapillary.com/embed?image_key=550092599700936&style=photo" 
-        height="480" 
-        width="640"  
-        frameborder="0">
-        </iframe>"""
-        return iframe
+        data = response.json()
+        print(data)
+        if data == {"data": []}:
+            return None
+        photo_id = data['data'][0]['id']
+        self.photo_id = photo_id
+        return photo_id
 
 
 def decimal_to_dms(decimal, type):

@@ -1,14 +1,45 @@
-from flask import Flask, render_template, request
-import folium
+from flask import Flask, render_template, request, make_response
 from modules import Loc
+import base64
+from math import exp, pi
+import threading
 import time
+import json
+
 app = Flask(__name__, static_folder='static')
 
-loc = Loc.RandLoc()
+locations = []
+
+config = json.load(open('config.json'))
+
+if config['access_token'] == "":
+    print("Please open the file setup.py and follow the instructions.")
+    exit(1)
+
+
+def add_location():
+    while True:
+        print("Thread" + str(len(locations)) + "locations.")
+        print("Generating new location...")
+        while len(locations) >= 2:
+            time.sleep(5)
+            print("Waiting for locations to be used...")
+        loc = Loc.RandLoc()
+        photo_id = loc.generate_nearest_streetview_iframe()
+        while photo_id is None:
+            loc = Loc.RandLoc()
+            photo_id = loc.generate_nearest_streetview_iframe()
+        locations.append(loc)
+        print("Location added.")
+
+
+thread = threading.Thread(target=add_location)
+thread.start()
 
 
 @app.route('/')
 def root():
+    print("Root" + str(len(locations)))
     markers = [
         {
             'lat': 0,
@@ -16,10 +47,14 @@ def root():
             'popup': 'This is the middle of the map.'
         }
     ]
-    m.get_root().html.add_child(folium.Element(
-        loc.generate_nearest_streetview_iframe()))
-    m.save("templates/index.html")
-    return render_template('index.html', markers=markers)
+    loc = locations.pop(0)
+    photo_id = loc.photo_id
+    loc_str = f"{loc.lat},{loc.lon}"
+    loc_str = base64.b64encode(loc_str.encode('utf-8')).decode('utf-8')
+    page = make_response(render_template(
+        'index.html', markers=markers, photo_id=photo_id))
+    page.set_cookie('loc', loc_str)
+    return page
 
 
 @app.route('/process', methods=['POST'])
@@ -27,43 +62,35 @@ def process():
     data = request.json
     lat = data['lat']
     lng = data['lng']
-    real_lat = loc.lat
-    real_lng = loc.lon
-    # Calculate the score based on the distance between the two points
-    # and the user's guess
-    distance = ((lat - real_lat)**2 + (lng - real_lng)**2)**0.5
-    score = 1 - distance / 180
-    print(score)
-    print(f"Real: {real_lat}, {real_lng}" +
-          f"Guess: {lat}, {lng}" + f"Distance: {distance}")
-    # Print the score to the console
-
-    return "ok"
+    page = make_response("ok")
+    loc = f"{lat},{lng}"
+    loc = base64.b64encode(loc.encode('utf-8')).decode('utf-8')
+    page.set_cookie('found_loc', loc)
+    return page
 
 
-@app.route('/connect', methods=['GET'])
-def connect():
-    # Accessing the parameters from the request
-    data = request.args
-    loc.access_token = data['code']
+@app.route('/result')
+def result():
+    found_loc = base64.b64decode(
+        request.cookies.get('loc')).decode('utf-8').split(',')
+    real_loc = base64.b64decode(request.cookies.get(
+        'found_loc')).decode('utf-8').split(',')
+    found_lat = float(found_loc[0])
+    found_lng = float(found_loc[1])
+    real_lat = float(real_loc[0])
+    real_lng = float(real_loc[1])
+    distance = round(((found_lat - real_lat)**2 + (found_lng - real_lng)
+                      ** 2)**0.5 * pi * 6371000 / 180, 2)
+    distance_km = round(distance / 1000, 2)
+    distance_str = f"{distance} m" if distance < 1000 else f"{distance_km} km"
+    score = round(5000 * exp(-distance_km / 2000), 2)
+    guess_location = {"lat": found_lat, "lng": found_lng}
+    real_location = {"lat": real_lat, "lng": real_lng}
+    formated_guess = Loc.decimal_to_dms(found_lat, "lat") + ", " +\
+        Loc.decimal_to_dms(found_lng, "lon")
+    formated_real = Loc.decimal_to_dms(real_lat, "lat") + ", " +\
+        Loc.decimal_to_dms(real_lng, "lon")
+    return render_template('result.html', formated_guess=formated_guess, formated_real=formated_real, real_location=real_location, guess_location=guess_location, distance=distance_str, score=score)
 
-    return "ok"
 
-
-m = folium.Map()
-m.get_root().html.add_child(folium.Element("""
-<div class="header">
-  <h1>Header</h1>
-  <p>My supercool header</p>
-</div> """))
-m._name = "map"
-m._id = "1"
-m.get_root().html.add_child(folium.JavascriptLink('static/js/universal.js'))
-
-
-# Generate a iframe in the form of a string "<iframe width="640" height="480" src="https://www.mapillary.com/embed?map_style=Mapillary%20streets&amp;image_key=5377780175626061&amp;x=0.508403494278837&amp;y=0.5097834191221994&amp;style=image" frameborder="0"></iframe>" using the mapillary api and add it to the map
-
-m.get_root().html.add_child(folium.CssLink('static/css/universal.css'))
-
-m.save("templates/index.html")
 app.run(host="localhost", port=8080, debug=True)
