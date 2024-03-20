@@ -45,7 +45,7 @@ class RandLoc:
             self.lon, self.lat = round(road['center']['lon'], 5), round(
                 road['center']['lat'], 5)
 
-    def generate_nearest_streetview_iframe(self):
+    def generate_nearest_mappilary_id(self):
 
         url = f"https://graph.mapillary.com/images?fields=id&bbox={self.lon-0.001},{self.lat-0.001},{self.lon+0.001},{self.lat+0.001}"
         headers = {

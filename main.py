@@ -8,6 +8,7 @@ import json
 
 app = Flask(__name__, static_folder='static')
 
+global locations
 locations = []
 
 config = json.load(open('config.json'))
@@ -25,10 +26,10 @@ def add_location():
             time.sleep(10)
             print("Waiting for locations to be used...")
         loc = Loc.RandLoc()
-        photo_id = loc.generate_nearest_streetview_iframe()
+        photo_id = loc.generate_nearest_mappilary_id()
         while photo_id is None:
             loc = Loc.RandLoc()
-            photo_id = loc.generate_nearest_streetview_iframe()
+            photo_id = loc.generate_nearest_mappilary_id()
         locations.append(loc)
         print("Location added.")
 
