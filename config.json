@@ -1,5 +1,5 @@
 {
-    "access_token": "",
-    "app_token": "",
-    "client_id": ""
+    "access_token": "", 
+    "client_id":"" ,
+    "client_secret": ""
 }

@@ -54,7 +54,7 @@ class RandLoc:
         }
         response = requests.get(headers=headers, url=url)
         data = response.json()
-        if data == {"data": []}:
+        if data == {"data": []} or "error" in data:
             return None
         photo_id = data['data'][0]['id']
         self.photo_id = photo_id
