@@ -28,7 +28,6 @@ def connect():
     response = requests.post(
         'https://graph.mapillary.com/token', headers=headers, data=data)
     response = response.json()
-    print(response)
     config['access_token'] = response['access_token']
     json.dump(config, open('config.json', 'w'))
     return "You can now close this tab. And run the app."
